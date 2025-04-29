@@ -1,0 +1,371 @@
+import React, { useState, useEffect } from 'react';
+import { Box, Paper, Typography, Button } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import Card from './Card';
+import PlayerHand from './PlayerHand';
+import io from 'socket.io-client';
+import { SOCKET_URL } from '../config';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+
+const TableContainer = styled(Paper)(({ theme }) => ({
+  width: 'min(90vw, 900px)',
+  height: 'min(60vw, 540px)',
+  background: 'linear-gradient(135deg, #264653 0%, #2a9d8f 100%)',
+  borderRadius: '50% / 40%',
+  position: 'relative',
+  margin: '40px auto',
+  padding: '0',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: '0 8px 32px rgba(44,62,80,0.18)',
+  border: '2px solid #222',
+  boxSizing: 'border-box',
+}));
+
+const CommunityCards = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: '18px',
+  margin: '0 auto 32px auto',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: '8px 0',
+}));
+
+const PlayerSpot = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  minWidth: 140,
+  minHeight: 90,
+  padding: '12px 10px 10px 10px',
+  background: 'rgba(30, 41, 59, 0.85)',
+  borderRadius: '16px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#fff',
+  fontFamily: 'Inter, Roboto, Arial, sans-serif',
+  fontWeight: 500,
+  fontSize: '1rem',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+  border: '1.5px solid #2a9d8f',
+  transition: 'background 0.2s',
+  boxSizing: 'border-box',
+  wordBreak: 'break-word',
+}));
+
+const ActionBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: '12px',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: '18px',
+}));
+
+const PotInfo = styled(Typography)(({ theme }) => ({
+  color: '#fff',
+  fontSize: '1.25rem',
+  fontWeight: 600,
+  letterSpacing: '0.02em',
+  marginBottom: '18px',
+  textShadow: '0 1px 4px rgba(0,0,0,0.18)',
+  fontFamily: 'Inter, Roboto, Arial, sans-serif',
+}));
+
+// Parse board cards robustly
+function parseCard(card) {
+  if (typeof card === 'string') {
+    // e.g. 'Ah', 'Ks', '10d'
+    const value = card.length === 3 ? card.slice(0, 2) : card[0];
+    const suitChar = card[card.length - 1].toLowerCase();
+    let suit;
+    switch (suitChar) {
+      case 'h': suit = 'hearts'; break;
+      case 'd': suit = 'diamonds'; break;
+      case 'c': suit = 'clubs'; break;
+      case 's': suit = 'spades'; break;
+      default: suit = undefined;
+    }
+    return { value, suit };
+  } else if (card && card.value && card.suit) {
+    // Handle suit as single-letter code
+    let suit = card.suit;
+    if (['h', 'd', 'c', 's'].includes(suit)) {
+      switch (suit) {
+        case 'h': suit = 'hearts'; break;
+        case 'd': suit = 'diamonds'; break;
+        case 'c': suit = 'clubs'; break;
+        case 's': suit = 'spades'; break;
+        default: suit = undefined;
+      }
+    }
+    return { value: card.value, suit };
+  } else if (card && card.rank && card.suit) {
+    return { value: card.rank, suit: card.suit };
+  }
+  return { value: '?', suit: undefined };
+}
+
+const GameTable = ({ gameId, isHost }) => {
+  const [socket, setSocket] = useState(null);
+  const [gameState, setGameState] = useState({
+    communityCards: [],
+    players: [],
+    currentPlayer: null,
+    pot: 0,
+    currentBet: 0,
+    bettingRound: 'pre-flop',
+  });
+  const [connected, setConnected] = useState(false);
+  const [playerId, setPlayerId] = useState(() => {
+    // Try to load playerId from localStorage
+    const storedPlayerId = localStorage.getItem('playerId');
+    if (storedPlayerId) return storedPlayerId;
+    
+    // Create a new playerId if one doesn't exist
+    const newPlayerId = `player-${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('playerId', newPlayerId);
+    return newPlayerId;
+  });
+
+  useEffect(() => {
+    if (playerId) {
+      localStorage.setItem('playerId', playerId);
+    }
+  }, [playerId]);
+
+  useEffect(() => {
+    const newSocket = io(SOCKET_URL);
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('Connected to server');
+      setConnected(true);
+      
+      // Join the game room on connect if gameId is available
+      if (gameId && playerId) {
+        newSocket.emit('joinGame', { gameId, playerId });
+      }
+    });
+
+    newSocket.on('gameState', (state) => {
+      console.log('Received game state:', state);
+      setGameState(state);
+    });
+
+    newSocket.on('joinedGame', ({ gameId, playerId, reconnected }) => {
+      console.log('Joined game:', gameId, 'as player:', playerId);
+      setPlayerId(playerId);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [gameId, playerId]);
+
+  const handlePlayerAction = (action, amount = 0) => {
+    if (!socket || !gameId || !playerId) return;
+    socket.emit('playerAction', { gameId, playerId, action, amount });
+  };
+
+  const createGame = () => {
+    if (!socket || !playerId) return;
+    
+    // Create a new game
+    socket.emit('createGame', { playerId });
+  };
+
+  const joinGame = () => {
+    if (!socket || !playerId || !gameId) return;
+    
+    // Join the game
+    socket.emit('joinGame', { gameId, playerId });
+  };
+
+  const startNewHand = () => {
+    if (!socket || !gameId) return;
+    
+    // Start a new hand
+    socket.emit('newHand', { gameId });
+  };
+
+  // Example player positions
+  const playerPositions = [
+    { id: 1, position: 'bottom', left: '50%', bottom: '20px' },
+    { id: 2, position: 'bottom-right', right: '20px', bottom: '20px' },
+    { id: 3, position: 'right', right: '20px', top: '50%' },
+    { id: 4, position: 'top-right', right: '20px', top: '20px' },
+    { id: 5, position: 'top', left: '50%', top: '20px' },
+    { id: 6, position: 'top-left', left: '20px', top: '20px' },
+    { id: 7, position: 'left', left: '20px', top: '50%' },
+    { id: 8, position: 'bottom-left', left: '20px', bottom: '20px' },
+  ];
+
+  // For testing: Add some sample data
+  const testGameState = {
+    communityCards: [
+      { value: 'A', suit: 'hearts' },
+      { value: 'K', suit: 'spades' },
+      { value: 'Q', suit: 'diamonds' },
+    ],
+    players: [
+      { 
+        id: 'player-1', 
+        position: 1, 
+        cards: [
+          { value: 'A', suit: 'clubs' },
+          { value: 'K', suit: 'clubs' }
+        ],
+        chips: 1000,
+        currentBet: 50,
+      },
+      { 
+        id: 'player-2', 
+        position: 3, 
+        cards: [
+          { value: 'J', suit: 'hearts' },
+          { value: '10', suit: 'hearts' }
+        ],
+        chips: 950,
+        currentBet: 50,
+      },
+    ],
+    currentPlayer: 'player-1',
+    pot: 100,
+    currentBet: 50,
+    bettingRound: 'flop',
+  };
+
+  // Use test data if not connected to server
+  const displayState = connected ? gameState : testGameState;
+  const board = displayState.board || displayState.communityCards || [];
+  const players = displayState.players || [];
+
+  // For debugging: log players, playerId, and currentPlayer
+  console.log('players:', players, 'playerId:', playerId, 'currentPlayer:', displayState.currentPlayer);
+
+  // Number of seats
+  const numSeats = playerPositions.length;
+  // Table center and radii
+  const tableWidth = 900;
+  const tableHeight = 540;
+  const centerX = tableWidth / 2;
+  const centerY = tableHeight / 2;
+  const radiusX = 370;
+  const radiusY = 210;
+
+  // Reorder players so local player is always first (bottom center for this client)
+  let orderedPlayers = [];
+  if (players && players.length > 0) {
+    const currentIdx = players.findIndex(p => p.id === playerId);
+    if (currentIdx !== -1) {
+      orderedPlayers = [players[currentIdx], ...players.slice(0, currentIdx), ...players.slice(currentIdx + 1)];
+    } else {
+      orderedPlayers = players;
+    }
+  }
+
+  // Winner message (center of table)
+  const winnerMessage = displayState.winner ? `🏆 Winner: ${displayState.winner.username || displayState.winner.name || displayState.winner.id}! 🏆` : null;
+  const isShowdown = displayState.bettingRound === 'showdown';
+  const winnerId = displayState.winner && (displayState.winner.id || displayState.winner._id);
+
+  return (
+    <Box sx={{ width: '100vw', minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#181a1b' }}>
+      <TableContainer>
+        {/* Winner message */}
+        {winnerMessage && (
+          <Box sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 10, background: '#fff', color: '#222', px: 4, py: 2, borderRadius: 2, boxShadow: '0 4px 16px rgba(0,0,0,0.18)', fontWeight: 700, fontSize: '2rem', maxWidth: '90vw', textAlign: 'center', wordBreak: 'break-word' }}>
+            {winnerMessage}
+          </Box>
+        )}
+        <PotInfo>
+          Pot: {displayState.pot} &nbsp;|&nbsp; Current Bet: {displayState.currentBet} &nbsp;|&nbsp; Round: {displayState.bettingRound}
+        </PotInfo>
+        <CommunityCards sx={isShowdown ? { opacity: 0.5, filter: 'grayscale(0.7)' } : {}}>
+          {board.map((card, index) => {
+            const parsed = parseCard(card);
+            return <Card key={index} value={parsed.value} suit={parsed.suit} />;
+          })}
+        </CommunityCards>
+        {/* Render seats symmetrically using polar coordinates */}
+        {Array.from({ length: numSeats }).map((_, idx) => {
+          const angle = ((360 / numSeats) * idx + 90) % 360;
+          const rad = (angle * Math.PI) / 180;
+          const left = centerX + radiusX * Math.cos(rad) - 60;
+          const top = centerY + radiusY * Math.sin(rad) - 40;
+          const player = orderedPlayers[idx];
+          const isLocalPlayer = player && player.id === playerId;
+          const isCurrentPlayer = player && player.id === displayState.currentPlayer;
+          const isWinner = isShowdown && player && player.id === winnerId;
+          let cards = player && player.hand ? player.hand.map(parseCard) : [];
+          if (isLocalPlayer && player.hand) {
+            cards = player.hand.map(parseCard);
+          }
+          return (
+            <PlayerSpot
+              key={idx}
+              sx={{
+                left: `${left}px`,
+                top: `${top}px`,
+                border: isCurrentPlayer ? '3px solid #e76f51' : isLocalPlayer ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f',
+                background: isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isLocalPlayer ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)',
+                boxShadow: isCurrentPlayer ? '0 0 24px 6px #e76f51' : isLocalPlayer ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)',
+                position: 'absolute',
+                minWidth: 120,
+                minHeight: 80,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {/* Trophy for winner */}
+              {isWinner && (
+                <EmojiEventsIcon sx={{ fontSize: 60, color: '#FFD700', mb: 1, filter: 'drop-shadow(0 0 8px #FFD700)' }} />
+              )}
+              {/* Order of play indicator */}
+              <Typography variant="caption" sx={{ color: '#bfc9d1', fontWeight: 700, mb: 0.5 }}>
+                Seat {idx + 1}
+              </Typography>
+              {/* Player name */}
+              {player && (
+                <Typography variant="subtitle2" sx={{ color: isCurrentPlayer ? '#e76f51' : isLocalPlayer ? '#e9c46a' : '#fff', fontWeight: 700, mb: 0.5, fontSize: '1.1rem', letterSpacing: 0.5, textAlign: 'center', wordBreak: 'break-word' }}>
+                  {player.username || player.name || player.id}
+                </Typography>
+              )}
+              {/* Your Turn! message */}
+              {isLocalPlayer && isCurrentPlayer && !isShowdown && (
+                <Typography variant="body2" sx={{ color: '#e76f51', fontWeight: 700, mb: 0.5 }}>
+                  Your Turn!
+                </Typography>
+              )}
+              {player ? (
+                <PlayerHand
+                  cards={cards}
+                  chips={player.chips}
+                  currentBet={player.currentBet}
+                  isActive={isCurrentPlayer}
+                  folded={player.folded}
+                  onAction={isLocalPlayer ? handlePlayerAction : undefined}
+                  isLocalPlayer={isLocalPlayer}
+                  bettingRound={displayState.bettingRound}
+                  winner={isWinner}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: '#bfc9d1', fontWeight: 400 }}>Empty Seat</Typography>
+              )}
+            </PlayerSpot>
+          );
+        })}
+      </TableContainer>
+    </Box>
+  );
+};
+
+export default GameTable; 
