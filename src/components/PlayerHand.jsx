@@ -72,6 +72,7 @@ const PlayerHand = ({
 
   const [showRaiseInput, setShowRaiseInput] = React.useState(false);
   const [raiseAmount, setRaiseAmount] = React.useState('');
+  const [raiseError, setRaiseError] = React.useState('');
 
   const handleAction = (action) => {
     if (action === 'raise') {
@@ -85,7 +86,16 @@ const PlayerHand = ({
 
   const handleRaiseConfirm = () => {
     const amount = parseInt(raiseAmount, 10);
-    if (onAction && amount > 0) {
+    if (isNaN(amount) || amount <= 0) {
+      setRaiseError('Enter a valid amount');
+      return;
+    }
+    if (amount > chips) {
+      setRaiseError('Not enough chips');
+      return;
+    }
+    setRaiseError('');
+    if (onAction) {
       onAction('raise', amount);
       setShowRaiseInput(false);
       setRaiseAmount('');
@@ -145,42 +155,49 @@ const PlayerHand = ({
             Raise
           </ActionButton>
           {showRaiseInput && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: isSmallScreen ? 1 : 0 }}>
-              <TextField
-                type="number"
-                size={isSmallScreen ? 'small' : 'medium'}
-                value={raiseAmount}
-                onChange={e => setRaiseAmount(e.target.value)}
-                placeholder="Amount"
-                inputProps={{ min: 1, style: { color: '#fff', width: 70 } }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#2a9d8f' },
-                    '&:hover fieldset': { borderColor: '#e9c46a' },
-                    '&.Mui-focused fieldset': { borderColor: '#e9c46a' },
-                  },
-                  '& .MuiInputLabel-root': { color: '#e9c46a' },
-                  '& .MuiInputBase-input': { color: '#fff' },
-                  background: 'rgba(30,41,59,0.85)',
-                  borderRadius: 1,
-                }}
-              />
-              <ActionButton
-                variant="contained"
-                color="success"
-                size={isSmallScreen ? 'small' : 'medium'}
-                onClick={handleRaiseConfirm}
-              >
-                Confirm
-              </ActionButton>
-              <ActionButton
-                variant="outlined"
-                color="error"
-                size={isSmallScreen ? 'small' : 'medium'}
-                onClick={() => { setShowRaiseInput(false); setRaiseAmount(''); }}
-              >
-                Cancel
-              </ActionButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: isSmallScreen ? 1 : 0, flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TextField
+                  type="number"
+                  size={isSmallScreen ? 'small' : 'medium'}
+                  value={raiseAmount}
+                  onChange={e => setRaiseAmount(e.target.value)}
+                  placeholder="Amount"
+                  inputProps={{ min: 1, style: { color: '#fff', width: 70 } }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': { borderColor: '#2a9d8f' },
+                      '&:hover fieldset': { borderColor: '#e9c46a' },
+                      '&.Mui-focused fieldset': { borderColor: '#e9c46a' },
+                    },
+                    '& .MuiInputLabel-root': { color: '#e9c46a' },
+                    '& .MuiInputBase-input': { color: '#fff' },
+                    background: 'rgba(30,41,59,0.85)',
+                    borderRadius: 1,
+                  }}
+                />
+                <ActionButton
+                  variant="contained"
+                  color="success"
+                  size={isSmallScreen ? 'small' : 'medium'}
+                  onClick={handleRaiseConfirm}
+                >
+                  Confirm
+                </ActionButton>
+                <ActionButton
+                  variant="outlined"
+                  color="error"
+                  size={isSmallScreen ? 'small' : 'medium'}
+                  onClick={() => { setShowRaiseInput(false); setRaiseAmount(''); setRaiseError(''); }}
+                >
+                  Cancel
+                </ActionButton>
+              </Box>
+              {raiseError && (
+                <Typography color="error" sx={{ fontSize: isSmallScreen ? '0.8rem' : '0.95rem', mt: 0.5 }}>
+                  {raiseError}
+                </Typography>
+              )}
             </Box>
           )}
         </Box>

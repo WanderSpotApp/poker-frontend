@@ -13,6 +13,7 @@ const GamePage = () => {
   const hostGameId = localStorage.getItem('hostGameId');
   const isHost = hostGameId === gameId;
   const [socket, setSocket] = React.useState(null);
+  const [bettingRound, setBettingRound] = React.useState();
 
   // Debug logs
   console.log('Game ID:', gameId);
@@ -60,13 +61,19 @@ const GamePage = () => {
           </IconButton>
         </Tooltip>
         {isHost && (
-          <Button variant="contained" color="primary" sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }} onClick={handleNewHand}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }}
+            onClick={handleNewHand}
+            disabled={bettingRound !== 'showdown' && bettingRound !== undefined}
+          >
             Deal New Hand
           </Button>
         )}
         <Button variant="outlined" color="secondary" onClick={() => navigate('/')}>Back to Home</Button>
       </Paper>
-      <GameTable gameId={gameId} isHost={isHost} />
+      <GameTable gameId={gameId} isHost={isHost} onBettingRoundChange={setBettingRound} />
     </Box>
   );
 };

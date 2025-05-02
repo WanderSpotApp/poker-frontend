@@ -23,8 +23,17 @@ const TableContainer = styled(Paper)(({ theme }) => ({
   border: '2px solid #222',
   boxSizing: 'border-box',
   [theme.breakpoints.down('sm')]: {
-    height: 'min(80vw, 540px)',
-    margin: '10px auto',
+    width: '98vw',
+    height: 'min(70vw, 60vh)',
+    margin: '4vw auto',
+    maxWidth: '100vw',
+    maxHeight: '60vh',
+  },
+  '@media (orientation: landscape) and (max-width: 900px)': {
+    width: '98vw',
+    height: '60vw',
+    maxHeight: '70vh',
+    margin: '2vw auto',
   }
 }));
 
@@ -128,7 +137,7 @@ function parseCard(card) {
   return { value: '?', suit: undefined };
 }
 
-const GameTable = ({ gameId, isHost }) => {
+const GameTable = ({ gameId, isHost, onBettingRoundChange }) => {
   const [socket, setSocket] = useState(null);
   const [gameState, setGameState] = useState({
     communityCards: [],
@@ -192,6 +201,12 @@ const GameTable = ({ gameId, isHost }) => {
       newSocket.disconnect();
     };
   }, [gameId, playerId]);
+
+  useEffect(() => {
+    if (onBettingRoundChange && typeof onBettingRoundChange === 'function') {
+      onBettingRoundChange(gameState.bettingRound);
+    }
+  }, [gameState.bettingRound, onBettingRoundChange]);
 
   const handlePlayerAction = (action, amount = 0) => {
     if (!socket || !gameId || !playerId) return;
@@ -309,8 +324,13 @@ const GameTable = ({ gameId, isHost }) => {
       alignItems: 'center', 
       justifyContent: 'center', 
       background: '#181a1b',
-      padding: isMobile ? '10px' : '20px',
-      overflow: 'auto'
+      padding: isMobile ? '2vw' : '20px',
+      overflow: 'auto',
+      boxSizing: 'border-box',
+      '@media (orientation: landscape) and (max-width: 900px)': {
+        minHeight: '100vh',
+        padding: '1vw',
+      }
     }}>
       <TableContainer>
         {/* Winner message */}
