@@ -110,7 +110,7 @@ const HomePage = () => {
 
   const handleCreateGame = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/games`, {
+      const response = await fetch(`${API_BASE_URL}/game/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
