@@ -1,5 +1,9 @@
-// API configuration
-export const API_BASE_URL = 'http://localhost:3001/api';
+// API Configuration
+export const API_BASE_URL = 'https://pokergame-2.onrender.com/api';
+export const SOCKET_URL = 'https://pokergame-2.onrender.com';
 
-// Socket.io configuration
-export const SOCKET_URL = 'http://localhost:3001'; 
+// Debug logging
+console.log('API Configuration:', {
+    API_BASE_URL,
+    SOCKET_URL
+}); 
