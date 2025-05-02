@@ -97,6 +97,7 @@ const PotInfo = styled(Typography)(({ theme }) => ({
 
 // Parse board cards robustly
 function parseCard(card) {
+  if (!card) return { value: '?', suit: undefined };
   if (typeof card === 'string') {
     // e.g. 'Ah', 'Ks', '10d'
     const value = card.length === 3 ? card.slice(0, 2) : card[0];
@@ -110,8 +111,8 @@ function parseCard(card) {
       default: suit = undefined;
     }
     return { value, suit };
-  } else if (card && card.value && card.suit) {
-    // Handle suit as single-letter code
+  } else if (card && (card.value || card.rank) && card.suit) {
+    // Accept both value/suit and rank/suit
     let suit = card.suit;
     if (['h', 'd', 'c', 's'].includes(suit)) {
       switch (suit) {
@@ -122,9 +123,7 @@ function parseCard(card) {
         default: suit = undefined;
       }
     }
-    return { value: card.value, suit };
-  } else if (card && card.rank && card.suit) {
-    return { value: card.rank, suit: card.suit };
+    return { value: card.value || card.rank, suit };
   }
   return { value: '?', suit: undefined };
 }
@@ -440,16 +439,18 @@ const GameTable = ({ gameId, isHost }) => {
           );
         })}
       </TableContainer>
-      {/* New Hand button for host */}
+      {/* New Hand button for host, below the table */}
       {orderedPlayers.length > 0 && orderedPlayers[0].id === playerId && (
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 3, fontWeight: 700, fontSize: isMobile ? '1rem' : '1.2rem' }}
-          onClick={startNewHand}
-        >
-          Deal New Hand
-        </Button>
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mt: 5 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ fontWeight: 700, fontSize: isMobile ? '1rem' : '1.2rem', minWidth: 220 }}
+            onClick={startNewHand}
+          >
+            Deal New Hand
+          </Button>
+        </Box>
       )}
     </Box>
   );
