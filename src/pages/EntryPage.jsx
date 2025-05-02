@@ -18,19 +18,28 @@ const EntryPage = () => {
       console.log('Attempting to', endpoint);
       const res = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ username, password })
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Error');
+      }
+      
       const data = await res.json();
       console.log('Response:', data);
-      if (!res.ok) throw new Error(data.error || 'Error');
-      if (tab === 0) {
+      
+      if (tab === 0) { // Login
         console.log('Login successful, setting token and username');
         localStorage.setItem('token', data.token);
         localStorage.setItem('username', data.username);
-        console.log('Navigating to home page');
-        navigate('/');
-      } else {
+        // Force a state update by using window.location
+        window.location.href = '/';
+      } else { // Register
         setTab(0);
         setError('Registration successful! Please log in.');
       }
