@@ -66,7 +66,7 @@ const GamePage = () => {
             color="primary"
             sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }}
             onClick={handleNewHand}
-            disabled={bettingRound !== 'showdown' && bettingRound !== undefined}
+            disabled={!!bettingRound && bettingRound !== 'showdown'}
           >
             Deal New Hand
           </Button>
