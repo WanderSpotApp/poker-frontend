@@ -20,6 +20,7 @@ const GamePage = () => {
   console.log('Game ID:', gameId);
   console.log('Host Game ID:', hostGameId);
   console.log('Is Host:', isHost);
+  console.log('bettingRound:', bettingRound);
 
   useEffect(() => {
     const newSocket = io(SOCKET_URL);
@@ -67,7 +68,7 @@ const GamePage = () => {
             color="primary"
             sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }}
             onClick={handleNewHand}
-            disabled={!!bettingRound && bettingRound !== 'showdown'}
+            disabled={bettingRound === 'flop' || bettingRound === 'turn' || bettingRound === 'river'}
           >
             Deal New Hand
           </Button>
