@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button } from '@mui/material';
+import { Box, Paper, Typography, Button, useTheme, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Card from './Card';
 import PlayerHand from './PlayerHand';
@@ -8,12 +8,12 @@ import { SOCKET_URL } from '../config';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 const TableContainer = styled(Paper)(({ theme }) => ({
-  width: 'min(90vw, 900px)',
+  width: 'min(95vw, 900px)',
   height: 'min(60vw, 540px)',
   background: 'linear-gradient(135deg, #264653 0%, #2a9d8f 100%)',
   borderRadius: '50% / 40%',
   position: 'relative',
-  margin: '40px auto',
+  margin: '20px auto',
   padding: '0',
   display: 'flex',
   flexDirection: 'column',
@@ -22,24 +22,32 @@ const TableContainer = styled(Paper)(({ theme }) => ({
   boxShadow: '0 8px 32px rgba(44,62,80,0.18)',
   border: '2px solid #222',
   boxSizing: 'border-box',
+  [theme.breakpoints.down('sm')]: {
+    height: 'min(80vw, 540px)',
+    margin: '10px auto',
+  }
 }));
 
 const CommunityCards = styled(Box)(({ theme }) => ({
   display: 'flex',
-  gap: '18px',
-  margin: '0 auto 32px auto',
+  gap: '12px',
+  margin: '0 auto 24px auto',
   justifyContent: 'center',
   alignItems: 'center',
   padding: '8px 0',
+  [theme.breakpoints.down('sm')]: {
+    gap: '8px',
+    margin: '0 auto 16px auto',
+  }
 }));
 
 const PlayerSpot = styled(Box)(({ theme }) => ({
   position: 'absolute',
-  minWidth: 140,
-  minHeight: 90,
-  padding: '12px 10px 10px 10px',
+  minWidth: 'min(120px, 20vw)',
+  minHeight: 'min(80px, 15vw)',
+  padding: '8px 6px',
   background: 'rgba(30, 41, 59, 0.85)',
-  borderRadius: '16px',
+  borderRadius: '12px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -47,30 +55,44 @@ const PlayerSpot = styled(Box)(({ theme }) => ({
   color: '#fff',
   fontFamily: 'Inter, Roboto, Arial, sans-serif',
   fontWeight: 500,
-  fontSize: '1rem',
+  fontSize: '0.9rem',
   boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
   border: '1.5px solid #2a9d8f',
   transition: 'background 0.2s',
   boxSizing: 'border-box',
   wordBreak: 'break-word',
+  [theme.breakpoints.down('sm')]: {
+    minWidth: 'min(100px, 25vw)',
+    minHeight: 'min(70px, 20vw)',
+    fontSize: '0.8rem',
+    padding: '6px 4px',
+  }
 }));
 
 const ActionBar = styled(Box)(({ theme }) => ({
   display: 'flex',
-  gap: '12px',
+  gap: '8px',
   justifyContent: 'center',
   alignItems: 'center',
-  marginTop: '18px',
+  marginTop: '12px',
+  [theme.breakpoints.down('sm')]: {
+    gap: '4px',
+    marginTop: '8px',
+  }
 }));
 
 const PotInfo = styled(Typography)(({ theme }) => ({
   color: '#fff',
-  fontSize: '1.25rem',
+  fontSize: '1.1rem',
   fontWeight: 600,
   letterSpacing: '0.02em',
-  marginBottom: '18px',
+  marginBottom: '12px',
   textShadow: '0 1px 4px rgba(0,0,0,0.18)',
   fontFamily: 'Inter, Roboto, Arial, sans-serif',
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '0.9rem',
+    marginBottom: '8px',
+  }
 }));
 
 // Parse board cards robustly
@@ -128,6 +150,9 @@ const GameTable = ({ gameId, isHost }) => {
     localStorage.setItem('playerId', newPlayerId);
     return newPlayerId;
   });
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (playerId) {
@@ -276,29 +301,56 @@ const GameTable = ({ gameId, isHost }) => {
   const winnerId = displayState.winner && (displayState.winner.id || displayState.winner._id);
 
   return (
-    <Box sx={{ width: '100vw', minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#181a1b' }}>
+    <Box sx={{ 
+      width: '100vw', 
+      minHeight: 'calc(100vh - 120px)', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      background: '#181a1b',
+      padding: isMobile ? '10px' : '20px',
+      overflow: 'auto'
+    }}>
       <TableContainer>
         {/* Winner message */}
         {winnerMessage && (
-          <Box sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 10, background: '#fff', color: '#222', px: 4, py: 2, borderRadius: 2, boxShadow: '0 4px 16px rgba(0,0,0,0.18)', fontWeight: 700, fontSize: '2rem', maxWidth: '90vw', textAlign: 'center', wordBreak: 'break-word' }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            left: '50%', 
+            top: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            zIndex: 10, 
+            background: '#fff', 
+            color: '#222', 
+            px: isMobile ? 2 : 4, 
+            py: isMobile ? 1 : 2, 
+            borderRadius: 2, 
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)', 
+            fontWeight: 700, 
+            fontSize: isMobile ? '1.2rem' : '2rem', 
+            maxWidth: '90vw', 
+            textAlign: 'center', 
+            wordBreak: 'break-word' 
+          }}>
             {winnerMessage}
           </Box>
         )}
         <PotInfo>
-          Pot: {displayState.pot} &nbsp;|&nbsp; Current Bet: {displayState.currentBet} &nbsp;|&nbsp; Round: {displayState.bettingRound}
+          Pot: {displayState.pot} | Bet: {displayState.currentBet} | {displayState.bettingRound}
         </PotInfo>
         <CommunityCards sx={isShowdown ? { opacity: 0.5, filter: 'grayscale(0.7)' } : {}}>
           {board.map((card, index) => {
             const parsed = parseCard(card);
-            return <Card key={index} value={parsed.value} suit={parsed.suit} />;
+            return <Card key={index} value={parsed.value} suit={parsed.suit} size={isMobile ? 'small' : 'medium'} />;
           })}
         </CommunityCards>
         {/* Render seats symmetrically using polar coordinates */}
         {Array.from({ length: numSeats }).map((_, idx) => {
           const angle = ((360 / numSeats) * idx + 90) % 360;
           const rad = (angle * Math.PI) / 180;
-          const left = centerX + radiusX * Math.cos(rad) - 60;
-          const top = centerY + radiusY * Math.sin(rad) - 40;
+          const left = centerX + radiusX * Math.cos(rad) - (isMobile ? 40 : 60);
+          const top = centerY + radiusY * Math.sin(rad) - (isMobile ? 30 : 40);
           const player = orderedPlayers[idx];
           const isLocalPlayer = player && player.id === playerId;
           const isCurrentPlayer = player && player.id === displayState.currentPlayer;
@@ -316,32 +368,48 @@ const GameTable = ({ gameId, isHost }) => {
                 border: isCurrentPlayer ? '3px solid #e76f51' : isLocalPlayer ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f',
                 background: isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isLocalPlayer ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)',
                 boxShadow: isCurrentPlayer ? '0 0 24px 6px #e76f51' : isLocalPlayer ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)',
-                position: 'absolute',
-                minWidth: 120,
-                minHeight: 80,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
               {/* Trophy for winner */}
               {isWinner && (
-                <EmojiEventsIcon sx={{ fontSize: 60, color: '#FFD700', mb: 1, filter: 'drop-shadow(0 0 8px #FFD700)' }} />
+                <EmojiEventsIcon sx={{ 
+                  fontSize: isMobile ? 40 : 60, 
+                  color: '#FFD700', 
+                  mb: 0.5, 
+                  filter: 'drop-shadow(0 0 8px #FFD700)' 
+                }} />
               )}
               {/* Order of play indicator */}
-              <Typography variant="caption" sx={{ color: '#bfc9d1', fontWeight: 700, mb: 0.5 }}>
+              <Typography variant="caption" sx={{ 
+                color: '#bfc9d1', 
+                fontWeight: 700, 
+                mb: 0.5,
+                fontSize: isMobile ? '0.7rem' : '0.8rem'
+              }}>
                 Seat {idx + 1}
               </Typography>
               {/* Player name */}
               {player && (
-                <Typography variant="subtitle2" sx={{ color: isCurrentPlayer ? '#e76f51' : isLocalPlayer ? '#e9c46a' : '#fff', fontWeight: 700, mb: 0.5, fontSize: '1.1rem', letterSpacing: 0.5, textAlign: 'center', wordBreak: 'break-word' }}>
+                <Typography variant="subtitle2" sx={{ 
+                  color: isCurrentPlayer ? '#e76f51' : isLocalPlayer ? '#e9c46a' : '#fff', 
+                  fontWeight: 700, 
+                  mb: 0.5, 
+                  fontSize: isMobile ? '0.9rem' : '1.1rem', 
+                  letterSpacing: 0.5, 
+                  textAlign: 'center', 
+                  wordBreak: 'break-word' 
+                }}>
                   {player.username || player.name || player.id}
                 </Typography>
               )}
               {/* Your Turn! message */}
               {isLocalPlayer && isCurrentPlayer && !isShowdown && (
-                <Typography variant="body2" sx={{ color: '#e76f51', fontWeight: 700, mb: 0.5 }}>
+                <Typography variant="body2" sx={{ 
+                  color: '#e76f51', 
+                  fontWeight: 700, 
+                  mb: 0.5,
+                  fontSize: isMobile ? '0.7rem' : '0.8rem'
+                }}>
                   Your Turn!
                 </Typography>
               )}
@@ -356,9 +424,16 @@ const GameTable = ({ gameId, isHost }) => {
                   isLocalPlayer={isLocalPlayer}
                   bettingRound={displayState.bettingRound}
                   winner={isWinner}
+                  isMobile={isMobile}
                 />
               ) : (
-                <Typography variant="body2" sx={{ color: '#bfc9d1', fontWeight: 400 }}>Empty Seat</Typography>
+                <Typography variant="body2" sx={{ 
+                  color: '#bfc9d1', 
+                  fontWeight: 400,
+                  fontSize: isMobile ? '0.7rem' : '0.8rem'
+                }}>
+                  Empty Seat
+                </Typography>
               )}
             </PlayerSpot>
           );

@@ -1,106 +1,210 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Button, Typography, Paper, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  TextField, 
+  Paper, 
+  useTheme, 
+  useMediaQuery,
+  Container
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
-import { SOCKET_URL } from '../config';
+import { API_BASE_URL } from '../config';
+
+const HomeContainer = styled(Container)(({ theme }) => ({
+  minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: theme.spacing(3),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+  }
+}));
+
+const Title = styled(Typography)(({ theme }) => ({
+  fontSize: '3rem',
+  fontWeight: 700,
+  color: '#fff',
+  textAlign: 'center',
+  marginBottom: theme.spacing(4),
+  textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '2rem',
+    marginBottom: theme.spacing(2),
+  }
+}));
+
+const Subtitle = styled(Typography)(({ theme }) => ({
+  fontSize: '1.2rem',
+  color: '#e9c46a',
+  textAlign: 'center',
+  marginBottom: theme.spacing(4),
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1rem',
+    marginBottom: theme.spacing(2),
+  }
+}));
+
+const GameCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  marginBottom: theme.spacing(4),
+  background: 'rgba(30, 41, 59, 0.85)',
+  borderRadius: '12px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+  border: '1px solid #2a9d8f',
+  width: '100%',
+  maxWidth: '500px',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(2),
+  }
+}));
+
+const InputField = styled(TextField)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: '#2a9d8f',
+    },
+    '&:hover fieldset': {
+      borderColor: '#e9c46a',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#e9c46a',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#e9c46a',
+  },
+  '& .MuiInputBase-input': {
+    color: '#fff',
+  },
+  [theme.breakpoints.down('sm')]: {
+    marginBottom: theme.spacing(2),
+  }
+}));
+
+const ActionButton = styled(Button)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+  padding: theme.spacing(1.5),
+  fontSize: '1rem',
+  fontWeight: 600,
+  textTransform: 'none',
+  width: '100%',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1),
+    fontSize: '0.9rem',
+  }
+}));
 
 const HomePage = () => {
-  const [joinOpen, setJoinOpen] = useState(false);
-  const [joinId, setJoinId] = useState('');
-  const [joinError, setJoinError] = useState('');
+  const [gameId, setGameId] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const username = localStorage.getItem('username');
-  const [socket, setSocket] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Ensure a unique playerId per browser
-  const [playerId, setPlayerId] = useState(() => {
-    let stored = localStorage.getItem('playerId');
-    if (!stored) {
-      stored = `player-${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('playerId', stored);
+  const handleCreateGame = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/games`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create game');
+      }
+      
+      const data = await response.json();
+      navigate(`/game/${data.gameId}`);
+    } catch (err) {
+      setError('Failed to create game. Please try again.');
+      console.error('Error creating game:', err);
     }
-    return stored;
-  });
-
-  useEffect(() => {
-    const newSocket = io(SOCKET_URL);
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  const handleCreateGame = () => {
-    if (!socket) return;
-    socket.once('joinedGame', ({ gameId, playerId: joinedPlayerId }) => {
-      localStorage.setItem('playerId', joinedPlayerId);
-      localStorage.setItem('hostGameId', gameId);
-      navigate(`/game/${gameId}`);
-    });
-    socket.emit('createGame', { playerId, username });
   };
 
   const handleJoinGame = () => {
-    if (!joinId.trim()) {
-      setJoinError('Please enter a game ID');
+    if (!gameId) {
+      setError('Please enter a game ID');
       return;
     }
-    if (!socket) {
-      setJoinError('Connection to server not established');
-      return;
-    }
-    setJoinError('');
-    socket.once('joinedGame', ({ gameId, playerId: joinedPlayerId }) => {
-      localStorage.setItem('playerId', joinedPlayerId);
-      navigate(`/game/${gameId}`);
-    });
-    socket.once('error', ({ error }) => {
-      setJoinError(error);
-    });
-    socket.emit('joinGame', { gameId: joinId.trim(), playerId, username });
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    navigate('/login');
+    navigate(`/game/${gameId}`);
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
-      <Paper sx={{ p: 4, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>Welcome, {username}!</Typography>
-        <Button variant="contained" color="primary" fullWidth onClick={handleCreateGame} sx={{ mb: 1 }}>
+    <HomeContainer>
+      <Title>Texas Hold'em Poker</Title>
+      <Subtitle>Play poker with friends in real-time</Subtitle>
+      
+      <GameCard>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: '#e9c46a', 
+            marginBottom: 3,
+            fontSize: isMobile ? '1.1rem' : '1.25rem'
+          }}
+        >
+          Create a New Game
+        </Typography>
+        <ActionButton
+          variant="contained"
+          color="primary"
+          onClick={handleCreateGame}
+          size={isMobile ? 'small' : 'medium'}
+        >
           Create Game
-        </Button>
-        <Button variant="outlined" color="primary" fullWidth onClick={() => setJoinOpen(true)} sx={{ mb: 1 }}>
+        </ActionButton>
+      </GameCard>
+
+      <GameCard>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: '#e9c46a', 
+            marginBottom: 3,
+            fontSize: isMobile ? '1.1rem' : '1.25rem'
+          }}
+        >
+          Join an Existing Game
+        </Typography>
+        <InputField
+          fullWidth
+          label="Game ID"
+          variant="outlined"
+          value={gameId}
+          onChange={(e) => setGameId(e.target.value)}
+          size={isMobile ? 'small' : 'medium'}
+        />
+        <ActionButton
+          variant="contained"
+          color="secondary"
+          onClick={handleJoinGame}
+          size={isMobile ? 'small' : 'medium'}
+        >
           Join Game
-        </Button>
-        <Button variant="text" color="secondary" fullWidth onClick={handleLogout}>
-          Logout
-        </Button>
-      </Paper>
-      <Dialog open={joinOpen} onClose={() => setJoinOpen(false)}>
-        <DialogTitle>Join Game</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Game ID"
-            value={joinId}
-            onChange={e => setJoinId(e.target.value)}
-            fullWidth
-            autoFocus
-            margin="normal"
-            error={!!joinError}
-            helperText={joinError}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setJoinOpen(false)}>Cancel</Button>
-          <Button onClick={handleJoinGame} variant="contained">Join</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        </ActionButton>
+      </GameCard>
+
+      {error && (
+        <Typography 
+          color="error" 
+          sx={{ 
+            marginTop: 2,
+            fontSize: isMobile ? '0.8rem' : '0.9rem'
+          }}
+        >
+          {error}
+        </Typography>
+      )}
+    </HomeContainer>
   );
 };
 
