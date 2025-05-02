@@ -19,9 +19,10 @@ const EntryPage = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ username, password }),
-                credentials: 'include' // Add this line
+                credentials: 'include'
             });
             
             console.log('Response status:', response.status); // Debug log
@@ -29,7 +30,7 @@ const EntryPage = () => {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error('Registration failed:', errorData); // Debug log
-                throw new Error(errorData.message || 'Registration failed');
+                throw new Error(errorData.error || 'Registration failed');
             }
             
             const data = await response.json();
