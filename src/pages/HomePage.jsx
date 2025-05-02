@@ -137,6 +137,7 @@ const HomePage = () => {
       }
       
       const data = await response.json();
+      localStorage.setItem('playerId', data.playerId);
       navigate(`/game/${data.gameId}`);
     } catch (err) {
       setError(err.message || 'Failed to create game. Please try again.');
