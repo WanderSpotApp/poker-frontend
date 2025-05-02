@@ -37,10 +37,11 @@ const CardValue = styled(Box)(({ theme, color, size }) => ({
   }
 }));
 
-const CardSuit = styled(Box)(({ theme, size }) => ({
+const CardSuit = styled(Box)(({ theme, size, color }) => ({
   fontSize: size === 'small' ? '1.2rem' : '1.8rem',
   lineHeight: 1,
   textAlign: 'center',
+  color: color,
   [theme.breakpoints.down('sm')]: {
     fontSize: size === 'small' ? '1rem' : '1.4rem',
   }
@@ -64,7 +65,7 @@ const Card = ({ value, suit, size = 'medium' }) => {
   return (
     <CardContainer size={size}>
       <CardValue color={getColor(suit)} size={size}>{value}</CardValue>
-      <CardSuit size={size}>{getSuitSymbol(suit)}</CardSuit>
+      <CardSuit size={size} color={getColor(suit)}>{getSuitSymbol(suit)}</CardSuit>
     </CardContainer>
   );
 };

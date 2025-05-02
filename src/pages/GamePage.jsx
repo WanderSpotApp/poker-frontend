@@ -60,8 +60,8 @@ const GamePage = () => {
           </IconButton>
         </Tooltip>
         {isHost && (
-          <Button variant="contained" color="success" onClick={handleNewHand}>
-            New Hand
+          <Button variant="contained" color="primary" sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }} onClick={handleNewHand}>
+            Deal New Hand
           </Button>
         )}
         <Button variant="outlined" color="secondary" onClick={() => navigate('/')}>Back to Home</Button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Button, useTheme, useMediaQuery, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Card from './Card';
 
@@ -70,9 +70,25 @@ const PlayerHand = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const [showRaiseInput, setShowRaiseInput] = React.useState(false);
+  const [raiseAmount, setRaiseAmount] = React.useState('');
+
   const handleAction = (action) => {
-    if (onAction) {
-      onAction(action);
+    if (action === 'raise') {
+      setShowRaiseInput(true);
+    } else {
+      setShowRaiseInput(false);
+      setRaiseAmount('');
+      if (onAction) onAction(action);
+    }
+  };
+
+  const handleRaiseConfirm = () => {
+    const amount = parseInt(raiseAmount, 10);
+    if (onAction && amount > 0) {
+      onAction('raise', amount);
+      setShowRaiseInput(false);
+      setRaiseAmount('');
     }
   };
 
@@ -100,7 +116,9 @@ const PlayerHand = ({
         <Box sx={{ 
           display: 'flex', 
           gap: isSmallScreen ? '4px' : '8px', 
-          mt: isSmallScreen ? '2px' : '4px' 
+          mt: isSmallScreen ? '2px' : '4px',
+          flexDirection: isSmallScreen ? 'column' : 'row',
+          alignItems: 'center'
         }}>
           <ActionButton 
             variant="contained" 
@@ -126,6 +144,45 @@ const PlayerHand = ({
           >
             Raise
           </ActionButton>
+          {showRaiseInput && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: isSmallScreen ? 1 : 0 }}>
+              <TextField
+                type="number"
+                size={isSmallScreen ? 'small' : 'medium'}
+                value={raiseAmount}
+                onChange={e => setRaiseAmount(e.target.value)}
+                placeholder="Amount"
+                inputProps={{ min: 1, style: { color: '#fff', width: 70 } }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#2a9d8f' },
+                    '&:hover fieldset': { borderColor: '#e9c46a' },
+                    '&.Mui-focused fieldset': { borderColor: '#e9c46a' },
+                  },
+                  '& .MuiInputLabel-root': { color: '#e9c46a' },
+                  '& .MuiInputBase-input': { color: '#fff' },
+                  background: 'rgba(30,41,59,0.85)',
+                  borderRadius: 1,
+                }}
+              />
+              <ActionButton
+                variant="contained"
+                color="success"
+                size={isSmallScreen ? 'small' : 'medium'}
+                onClick={handleRaiseConfirm}
+              >
+                Confirm
+              </ActionButton>
+              <ActionButton
+                variant="outlined"
+                color="error"
+                size={isSmallScreen ? 'small' : 'medium'}
+                onClick={() => { setShowRaiseInput(false); setRaiseAmount(''); }}
+              >
+                Cancel
+              </ActionButton>
+            </Box>
+          )}
         </Box>
       )}
       {folded && (
