@@ -170,7 +170,8 @@ const GameTable = ({ gameId, isHost }) => {
       
       // Join the game room on connect if gameId is available
       if (gameId && playerId) {
-        newSocket.emit('joinGame', { gameId, playerId });
+        const username = localStorage.getItem('username');
+        newSocket.emit('joinGame', { gameId, playerId, username });
       }
     });
 
