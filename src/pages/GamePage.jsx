@@ -67,7 +67,7 @@ const GamePage = () => {
             color="primary"
             sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }}
             onClick={handleNewHand}
-            disabled={gameInProgress}
+            disabled={bettingRound !== 'showdown'}
           >
             Deal New Hand
           </Button>
