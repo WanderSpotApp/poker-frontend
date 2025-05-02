@@ -137,7 +137,7 @@ function parseCard(card) {
   return { value: '?', suit: undefined };
 }
 
-const GameTable = ({ gameId, isHost, onBettingRoundChange }) => {
+const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChange }) => {
   const [socket, setSocket] = useState(null);
   const [gameState, setGameState] = useState({
     communityCards: [],
@@ -206,7 +206,13 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange }) => {
     if (onBettingRoundChange && typeof onBettingRoundChange === 'function') {
       onBettingRoundChange(gameState.bettingRound);
     }
-  }, [gameState.bettingRound, onBettingRoundChange]);
+    if (onGameInProgressChange && typeof onGameInProgressChange === 'function') {
+      // Hand is in progress if bettingRound is not 'showdown' and at least two players have cards
+      const playersWithCards = (gameState.players || []).filter(p => p.hand && p.hand.length > 0 && !p.folded);
+      const inProgress = gameState.bettingRound && gameState.bettingRound !== 'showdown' && playersWithCards.length >= 2;
+      onGameInProgressChange(inProgress);
+    }
+  }, [gameState.bettingRound, gameState.players, onBettingRoundChange, onGameInProgressChange]);
 
   const handlePlayerAction = (action, amount = 0) => {
     if (!socket || !gameId || !playerId) return;

@@ -14,6 +14,7 @@ const GamePage = () => {
   const isHost = hostGameId === gameId;
   const [socket, setSocket] = React.useState(null);
   const [bettingRound, setBettingRound] = React.useState();
+  const [gameInProgress, setGameInProgress] = React.useState(false);
 
   // Debug logs
   console.log('Game ID:', gameId);
@@ -66,14 +67,19 @@ const GamePage = () => {
             color="primary"
             sx={{ fontWeight: 700, fontSize: '1rem', ml: 2 }}
             onClick={handleNewHand}
-            disabled={!!bettingRound && bettingRound !== 'showdown'}
+            disabled={gameInProgress}
           >
             Deal New Hand
           </Button>
         )}
         <Button variant="outlined" color="secondary" onClick={() => navigate('/')}>Back to Home</Button>
       </Paper>
-      <GameTable gameId={gameId} isHost={isHost} onBettingRoundChange={setBettingRound} />
+      <GameTable
+        gameId={gameId}
+        isHost={isHost}
+        onBettingRoundChange={setBettingRound}
+        onGameInProgressChange={setGameInProgress}
+      />
     </Box>
   );
 };
