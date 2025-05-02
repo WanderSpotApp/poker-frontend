@@ -108,24 +108,38 @@ const HomePage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login';
+  };
+
   const handleCreateGame = async () => {
     try {
+      const username = localStorage.getItem('username');
+      if (!username) {
+        setError('Please log in first');
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/game/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({ name: username })
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create game');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create game');
       }
       
       const data = await response.json();
       navigate(`/game/${data.gameId}`);
     } catch (err) {
-      setError('Failed to create game. Please try again.');
+      setError(err.message || 'Failed to create game. Please try again.');
       console.error('Error creating game:', err);
     }
   };
@@ -190,6 +204,27 @@ const HomePage = () => {
           size={isMobile ? 'small' : 'medium'}
         >
           Join Game
+        </ActionButton>
+      </GameCard>
+
+      <GameCard>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: '#e9c46a', 
+            marginBottom: 3,
+            fontSize: isMobile ? '1.1rem' : '1.25rem'
+          }}
+        >
+          Account
+        </Typography>
+        <ActionButton
+          variant="contained"
+          color="error"
+          onClick={handleLogout}
+          size={isMobile ? 'small' : 'medium'}
+        >
+          Logout
         </ActionButton>
       </GameCard>
 
