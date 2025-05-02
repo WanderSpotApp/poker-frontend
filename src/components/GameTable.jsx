@@ -440,6 +440,17 @@ const GameTable = ({ gameId, isHost }) => {
           );
         })}
       </TableContainer>
+      {/* New Hand button for host */}
+      {orderedPlayers.length > 0 && orderedPlayers[0].id === playerId && (
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3, fontWeight: 700, fontSize: isMobile ? '1rem' : '1.2rem' }}
+          onClick={startNewHand}
+        >
+          Deal New Hand
+        </Button>
+      )}
     </Box>
   );
 };
