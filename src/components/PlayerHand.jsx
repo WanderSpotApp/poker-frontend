@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button, useTheme, useMediaQuery, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Card from './Card';
@@ -65,14 +65,15 @@ const PlayerHand = ({
   isLocalPlayer, 
   bettingRound,
   winner,
-  isMobile
+  isMobile,
+  minRaise
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [showRaiseInput, setShowRaiseInput] = React.useState(false);
-  const [raiseAmount, setRaiseAmount] = React.useState('');
-  const [raiseError, setRaiseError] = React.useState('');
+  const [showRaiseInput, setShowRaiseInput] = useState(false);
+  const [raiseAmount, setRaiseAmount] = useState('');
+  const [raiseError, setRaiseError] = useState('');
 
   const handleAction = (action) => {
     if (action === 'raise') {
@@ -94,6 +95,10 @@ const PlayerHand = ({
       setRaiseError('Not enough chips');
       return;
     }
+    if (amount < minRaise) {
+      setRaiseError(`Minimum raise is ${minRaise}`);
+      return;
+    }
     setRaiseError('');
     if (onAction) {
       onAction('raise', amount);
@@ -101,6 +106,10 @@ const PlayerHand = ({
       setRaiseAmount('');
     }
   };
+
+  const canCheck = currentBet === 0;
+  const canCall = currentBet > 0 && chips >= currentBet;
+  const canRaise = chips >= minRaise;
 
   return (
     <HandContainer>
@@ -130,29 +139,43 @@ const PlayerHand = ({
           flexDirection: isSmallScreen ? 'column' : 'row',
           alignItems: 'center'
         }}>
+          {canCheck && (
+            <ActionButton 
+              variant="contained" 
+              color="primary" 
+              onClick={() => handleAction('check')}
+              size={isSmallScreen ? 'small' : 'medium'}
+            >
+              Check
+            </ActionButton>
+          )}
+          {canCall && (
+            <ActionButton 
+              variant="contained" 
+              color="secondary" 
+              onClick={() => handleAction('call')}
+              size={isSmallScreen ? 'small' : 'medium'}
+            >
+              Call {currentBet}
+            </ActionButton>
+          )}
+          {canRaise && (
+            <ActionButton 
+              variant="contained" 
+              color="success" 
+              onClick={() => handleAction('raise')}
+              size={isSmallScreen ? 'small' : 'medium'}
+            >
+              Raise
+            </ActionButton>
+          )}
           <ActionButton 
             variant="contained" 
-            color="primary" 
+            color="error" 
             onClick={() => handleAction('fold')}
             size={isSmallScreen ? 'small' : 'medium'}
           >
             Fold
-          </ActionButton>
-          <ActionButton 
-            variant="contained" 
-            color="secondary" 
-            onClick={() => handleAction('call')}
-            size={isSmallScreen ? 'small' : 'medium'}
-          >
-            Call
-          </ActionButton>
-          <ActionButton 
-            variant="contained" 
-            color="success" 
-            onClick={() => handleAction('raise')}
-            size={isSmallScreen ? 'small' : 'medium'}
-          >
-            Raise
           </ActionButton>
           {showRaiseInput && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: isSmallScreen ? 1 : 0, flexDirection: 'column' }}>
@@ -162,8 +185,8 @@ const PlayerHand = ({
                   size={isSmallScreen ? 'small' : 'medium'}
                   value={raiseAmount}
                   onChange={e => setRaiseAmount(e.target.value)}
-                  placeholder="Amount"
-                  inputProps={{ min: 1, style: { color: '#fff', width: 70 } }}
+                  placeholder={`Min: ${minRaise}`}
+                  inputProps={{ min: minRaise, max: chips, style: { color: '#fff', width: 70 } }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': { borderColor: '#2a9d8f' },

@@ -321,6 +321,47 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
   const isShowdown = displayState.bettingRound === 'showdown';
   const winnerId = displayState.winner && (displayState.winner.id || displayState.winner._id);
 
+  const renderPlayer = (player, position) => {
+    const isCurrentPlayer = player.id === playerId;
+    const isActive = player.id === gameState.currentPlayer;
+    const isDealer = player.isDealer;
+    const isSmallBlind = player.isSmallBlind;
+    const isBigBlind = player.isBigBlind;
+
+    return (
+      <PlayerContainer
+        key={player.id}
+        position={position}
+        isCurrentPlayer={isCurrentPlayer}
+        isActive={isActive}
+      >
+        <PlayerInfo>
+          <PlayerName>{player.username || player.name}</PlayerName>
+          <ChipsInfo>Chips: {player.chips}</ChipsInfo>
+          {player.currentBet > 0 && (
+            <BetInfo>Bet: {player.currentBet}</BetInfo>
+          )}
+          {player.folded && <FoldIndicator>Folded</FoldIndicator>}
+        </PlayerInfo>
+        
+        <PlayerHand
+          cards={player.hand}
+          isCurrentPlayer={isCurrentPlayer}
+          isActive={isActive}
+          chips={player.chips}
+          currentBet={player.currentBet}
+          onAction={handlePlayerAction}
+        />
+
+        <PositionIndicators>
+          {isDealer && <DealerButton>D</DealerButton>}
+          {isSmallBlind && <BlindIndicator>SB</BlindIndicator>}
+          {isBigBlind && <BlindIndicator>BB</BlindIndicator>}
+        </PositionIndicators>
+      </PlayerContainer>
+    );
+  };
+
   return (
     <Box sx={{ 
       width: '100vw', 
@@ -362,111 +403,162 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
             {winnerMessage}
           </Box>
         )}
-        <PotInfo>
-          Pot: {displayState.pot} | Bet: {displayState.currentBet} | {displayState.bettingRound}
-        </PotInfo>
+        <GameInfo>
+          <PotInfo>Pot: {displayState.pot}</PotInfo>
+          {displayState.currentBet > 0 && (
+            <CurrentBetInfo>Current Bet: {displayState.currentBet}</CurrentBetInfo>
+          )}
+          <BettingRoundInfo>Round: {displayState.bettingRound}</BettingRoundInfo>
+          {displayState.minRaise > 0 && (
+            <MinRaiseInfo>Min Raise: {displayState.minRaise}</MinRaiseInfo>
+          )}
+        </GameInfo>
         <CommunityCards sx={isShowdown ? { opacity: 0.5, filter: 'grayscale(0.7)' } : {}}>
           {board.map((card, index) => {
             const parsed = parseCard(card);
             return <Card key={index} value={parsed.value} suit={parsed.suit} size={isMobile ? 'small' : 'medium'} />;
           })}
         </CommunityCards>
-        {/* Render seats symmetrically using polar coordinates */}
-        {Array.from({ length: numSeats }).map((_, idx) => {
-          const angle = ((360 / numSeats) * idx + 90) % 360;
-          const rad = (angle * Math.PI) / 180;
-          const left = centerX + radiusX * Math.cos(rad) - (isMobile ? 40 : 60);
-          const top = centerY + radiusY * Math.sin(rad) - (isMobile ? 30 : 40);
-          const player = orderedPlayers[idx];
-          const isLocalPlayer = player && player.id === playerId;
-          const isCurrentPlayer = player && player.id === displayState.currentPlayer;
-          const isWinner = isShowdown && player && player.id === winnerId;
-          let cards = player && player.hand ? player.hand.map(parseCard) : [];
-          if (isLocalPlayer && player.hand) {
-            cards = player.hand.map(parseCard);
-          }
-          return (
-            <PlayerSpot
-              key={idx}
-              sx={{
-                left: `${left}px`,
-                top: `${top}px`,
-                border: isCurrentPlayer ? '3px solid #e76f51' : isLocalPlayer ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f',
-                background: isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isLocalPlayer ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)',
-                boxShadow: isCurrentPlayer ? '0 0 24px 6px #e76f51' : isLocalPlayer ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)',
-              }}
-            >
-              {/* Trophy for winner */}
-              {isWinner && (
-                <EmojiEventsIcon sx={{ 
-                  fontSize: isMobile ? 40 : 60, 
-                  color: '#FFD700', 
-                  mb: 0.5, 
-                  filter: 'drop-shadow(0 0 8px #FFD700)' 
-                }} />
-              )}
-              {/* Order of play indicator */}
-              <Typography variant="caption" sx={{ 
-                color: '#bfc9d1', 
-                fontWeight: 700, 
-                mb: 0.5,
-                fontSize: isMobile ? '0.7rem' : '0.8rem'
-              }}>
-                Seat {idx + 1}
-              </Typography>
-              {/* Player name */}
-              {player && (
-                <Typography variant="subtitle2" sx={{ 
-                  color: isCurrentPlayer ? '#e76f51' : isLocalPlayer ? '#e9c46a' : '#fff', 
-                  fontWeight: 700, 
-                  mb: 0.5, 
-                  fontSize: isMobile ? '0.9rem' : '1.1rem', 
-                  letterSpacing: 0.5, 
-                  textAlign: 'center', 
-                  wordBreak: 'break-word' 
-                }}>
-                  {player.username || player.name || player.id}
-                </Typography>
-              )}
-              {/* Your Turn! message */}
-              {isLocalPlayer && isCurrentPlayer && !isShowdown && (
-                <Typography variant="body2" sx={{ 
-                  color: '#e76f51', 
-                  fontWeight: 700, 
-                  mb: 0.5,
-                  fontSize: isMobile ? '0.7rem' : '0.8rem'
-                }}>
-                  Your Turn!
-                </Typography>
-              )}
-              {player ? (
-                <PlayerHand
-                  cards={cards}
-                  chips={player.chips}
-                  currentBet={player.currentBet}
-                  isActive={isCurrentPlayer}
-                  folded={player.folded}
-                  onAction={isLocalPlayer ? handlePlayerAction : undefined}
-                  isLocalPlayer={isLocalPlayer}
-                  bettingRound={displayState.bettingRound}
-                  winner={isWinner}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <Typography variant="body2" sx={{ 
-                  color: '#bfc9d1', 
-                  fontWeight: 400,
-                  fontSize: isMobile ? '0.7rem' : '0.8rem'
-                }}>
-                  Empty Seat
-                </Typography>
-              )}
-            </PlayerSpot>
-          );
-        })}
+        <PlayersContainer>
+          {orderedPlayers.map((player, index) => {
+            const position = playerPositions[index % playerPositions.length];
+            return renderPlayer(player, position);
+          })}
+        </PlayersContainer>
       </TableContainer>
     </Box>
   );
 };
+
+// Add new styled components
+const PositionIndicators = styled.div`
+  position: absolute;
+  display: flex;
+  gap: 4px;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+`;
+
+const DealerButton = styled.div`
+  background-color: #fff;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 12px;
+`;
+
+const BlindIndicator = styled.div`
+  background-color: #ffd700;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+`;
+
+const GameInfo = styled.div`
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: white;
+`;
+
+const PotInfo = styled.div`
+  font-weight: bold;
+`;
+
+const CurrentBetInfo = styled.div``;
+
+const BettingRoundInfo = styled.div`
+  text-transform: capitalize;
+`;
+
+const MinRaiseInfo = styled.div``;
+
+const PlayerContainer = styled.div`
+  position: absolute;
+  left: ${({ position }) => position.left};
+  top: ${({ position }) => position.top};
+  width: ${({ position }) => position.width || 'auto'};
+  height: ${({ position }) => position.height || 'auto'};
+  padding: 8px;
+  background: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isActive ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)'};
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '#e76f51' : isActive ? '#e9c46a' : '#fff'};
+  font-family: Inter, Roboto, Arial, sans-serif;
+  font-weight: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? 700 : isActive ? 500 : 500};
+  font-size: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '1.1rem' : isActive ? '0.9rem' : '0.9rem'};
+  box-shadow: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '0 0 24px 6px #e76f51' : isActive ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)'};
+  border: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '3px solid #e76f51' : isActive ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f'};
+  transition: background 0.2s;
+  box-sizing: border-box;
+  word-break: break-word;
+`;
+
+const PlayerInfo = styled.div`
+  margin-bottom: 8px;
+`;
+
+const PlayerName = styled.div`
+  font-weight: bold;
+`;
+
+const ChipsInfo = styled.div`
+  font-size: 0.9rem;
+`;
+
+const BetInfo = styled.div`
+  font-size: 0.9rem;
+`;
+
+const FoldIndicator = styled.div`
+  font-size: 0.9rem;
+`;
+
+const PlayersContainer = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
+const WinnerMessage = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: #fff;
+  color: #222;
+  px: 4;
+  py: 2;
+  border-radius: 2;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  font-weight: 700;
+  font-size: 2rem;
+  max-width: 90vw;
+  text-align: center;
+  word-break: break-word;
+`;
 
 export default GameTable; 
