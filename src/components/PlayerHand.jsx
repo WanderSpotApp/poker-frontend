@@ -56,17 +56,17 @@ const ActionButton = styled(Button)(({ theme }) => ({
 }));
 
 const PlayerHand = ({ 
-  cards, 
-  chips, 
-  currentBet, 
-  isActive, 
-  folded, 
+  cards = [],
+  chips = 0, 
+  currentBet = 0, 
+  isActive = false, 
+  folded = false, 
   onAction, 
-  isLocalPlayer, 
-  bettingRound,
-  winner,
-  isMobile,
-  minRaise
+  isLocalPlayer = false, 
+  bettingRound = 'preflop',
+  winner = false,
+  isMobile = false,
+  minRaise = 0
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -114,11 +114,11 @@ const PlayerHand = ({
   return (
     <HandContainer>
       <CardsContainer>
-        {cards.map((card, index) => (
+        {Array.isArray(cards) && cards.map((card, index) => (
           <Card 
             key={index} 
-            value={card.value} 
-            suit={card.suit} 
+            value={card?.value} 
+            suit={card?.suit} 
             size={isMobile ? 'small' : 'medium'}
           />
         ))}
