@@ -248,7 +248,10 @@ const CircularPlayerSpot = styled(Box)(({ theme, isActive, isCurrentPlayer, isEm
   opacity: isEmpty ? 0.4 : 1,
   filter: isEmpty ? 'grayscale(1)' : 'none',
   zIndex: isCurrentPlayer ? 12 : isActive ? 11 : 10,
-  transition: 'opacity 0.2s, filter 0.2s',
+  transition: 'opacity 0.2s, filter 0.2s, box-shadow 0.2s',
+  boxShadow: isActive ? '0 0 0 4px #ffd700, 0 0 16px 4px #ffd70088' : 'none',
+  border: isCurrentPlayer ? '3px solid #e76f51' : 'none',
+  borderRadius: '50%',
 }));
 
 // Action buttons at the bottom
@@ -480,6 +483,9 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
     seats[idx] = player;
   });
 
+  // Determine if it's the local player's turn
+  const isLocalPlayersTurn = orderedPlayers[0] && orderedPlayers[0].id === gameState.currentPlayer;
+
   return (
     <Box sx={{
       width: '100vw',
@@ -496,7 +502,7 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
     }}>
       <Box sx={{ position: 'relative', width: 900, height: 540, maxWidth: '98vw', maxHeight: '70vw', margin: '0 auto' }}>
         <TableContainer>
-          <TableName>MONEYXRP</TableName>
+          <TableName>Money Lisa Poker</TableName>
           {/* Player spots */}
           {seats.map((player, idx) => {
             const angle = seatAngles[idx % seatAngles.length];
@@ -519,6 +525,10 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
                     {getAvatar(player)}
                     <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 18, mt: 1 }}>{player.username || player.name || 'Player'}</Typography>
                     <ChipStack amount={player.chips || 0} />
+                    {/* Show 'Your Turn' badge for local player if it's their turn */}
+                    {isCurrentPlayer && player.id === gameState.currentPlayer && player.id === playerId && (
+                      <Box sx={{ mt: 1, px: 2, py: 0.5, background: '#ffd700', color: '#222', borderRadius: 12, fontWeight: 700, fontSize: 14 }}>Your Turn</Box>
+                    )}
                   </>
                 ) : (
                   <PersonIcon sx={{ width: 48, height: 48, color: '#fff', opacity: 0.4 }} />
@@ -548,11 +558,14 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
               </CardsContainer>
             </Box>
           )}
-          {/* Action buttons */}
-          <ActionButtonsBar>
-            <ActionButtonStyled onClick={() => handlePlayerAction('call')}>CALL</ActionButtonStyled>
-            <ActionButtonStyled onClick={() => handlePlayerAction('raise')}>RAISE</ActionButtonStyled>
-          </ActionButtonsBar>
+          {/* Action buttons: only show for local player and only if it's their turn */}
+          {isLocalPlayersTurn && (
+            <ActionButtonsBar>
+              <ActionButtonStyled onClick={() => handlePlayerAction('call')}>CALL</ActionButtonStyled>
+              <ActionButtonStyled onClick={() => handlePlayerAction('raise')}>RAISE</ActionButtonStyled>
+              <ActionButtonStyled onClick={() => handlePlayerAction('fold')}>FOLD</ActionButtonStyled>
+            </ActionButtonsBar>
+          )}
         </TableContainer>
       </Box>
     </Box>
