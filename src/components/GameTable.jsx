@@ -170,14 +170,12 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
     pot: 0,
     currentBet: 0,
     bettingRound: 'pre-flop',
+    minRaise: 0
   });
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(() => {
-    // Try to load playerId from localStorage
     const storedPlayerId = localStorage.getItem('playerId');
     if (storedPlayerId) return storedPlayerId;
-    
-    // Create a new playerId if one doesn't exist
     const newPlayerId = `player-${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('playerId', newPlayerId);
     return newPlayerId;
@@ -200,7 +198,6 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
       console.log('Connected to server');
       setConnected(true);
       
-      // Join the game room on connect if gameId is available
       if (gameId && playerId) {
         const username = localStorage.getItem('username');
         newSocket.emit('joinGame', { gameId, playerId, username });
@@ -209,7 +206,16 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
 
     newSocket.on('gameState', (state) => {
       console.log('Received game state:', state);
-      setGameState(state);
+      setGameState(prevState => ({
+        ...prevState,
+        ...state,
+        players: state.players || prevState.players,
+        communityCards: state.communityCards || state.board || prevState.communityCards,
+        bettingRound: state.bettingRound || prevState.bettingRound,
+        pot: state.pot || prevState.pot,
+        currentBet: state.currentBet || prevState.currentBet,
+        minRaise: state.minRaise || prevState.minRaise
+      }));
     });
 
     newSocket.on('joinedGame', ({ gameId, playerId, reconnected }) => {
@@ -231,7 +237,6 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
       onBettingRoundChange(gameState.bettingRound);
     }
     if (onGameInProgressChange && typeof onGameInProgressChange === 'function') {
-      // Hand is in progress if bettingRound is not 'showdown' and at least two players have cards
       const playersWithCards = (gameState.players || []).filter(p => p.hand && p.hand.length > 0 && !p.folded);
       const inProgress = gameState.bettingRound && gameState.bettingRound !== 'showdown' && playersWithCards.length >= 2;
       onGameInProgressChange(inProgress);
@@ -346,6 +351,8 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
   const winnerId = displayState.winner && (displayState.winner.id || displayState.winner._id);
 
   const renderPlayer = (player, position) => {
+    if (!player) return null;
+    
     const isCurrentPlayer = player.id === playerId;
     const isActive = player.id === gameState.currentPlayer;
     const isDealer = player.isDealer;
@@ -360,8 +367,8 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
         isActive={isActive}
       >
         <PlayerInfo>
-          <PlayerName>{player.username || player.name}</PlayerName>
-          <ChipsInfo>Chips: {player.chips}</ChipsInfo>
+          <PlayerName>{player.username || player.name || 'Player'}</PlayerName>
+          <ChipsInfo>Chips: {player.chips || 0}</ChipsInfo>
           {player.currentBet > 0 && (
             <BetInfo>Bet: {player.currentBet}</BetInfo>
           )}
@@ -369,12 +376,17 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
         </PlayerInfo>
         
         <PlayerHand
-          cards={player.hand}
+          cards={player.hand || []}
           isCurrentPlayer={isCurrentPlayer}
           isActive={isActive}
-          chips={player.chips}
-          currentBet={player.currentBet}
+          chips={player.chips || 0}
+          currentBet={player.currentBet || 0}
           onAction={handlePlayerAction}
+          isLocalPlayer={isCurrentPlayer}
+          bettingRound={gameState.bettingRound}
+          folded={player.folded}
+          isMobile={isMobile}
+          minRaise={gameState.minRaise}
         />
 
         <PositionIndicators>
