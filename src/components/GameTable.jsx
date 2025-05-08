@@ -90,38 +90,43 @@ const ActionBar = styled(Box)(({ theme }) => ({
   }
 }));
 
-const GameInfo = styled.div`
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 16px;
-  background-color: rgba(0, 0, 0, 0.7);
-  padding: 8px 16px;
-  border-radius: 8px;
-  color: white;
-`;
+const GameInfo = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  gap: '16px',
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  padding: '8px 16px',
+  borderRadius: '8px',
+  color: 'white',
+}));
 
-const PotInfo = styled.div`
-  font-weight: bold;
-  color: #fff;
-  font-size: 1.1rem;
-  letter-spacing: 0.02em;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.18);
-  font-family: Inter, Roboto, Arial, sans-serif;
-  @media (max-width: 600px) {
-    font-size: 0.9rem;
+const PotInfo = styled(Typography)(({ theme }) => ({
+  fontWeight: 'bold',
+  color: '#fff',
+  fontSize: '1.1rem',
+  letterSpacing: '0.02em',
+  textShadow: '0 1px 4px rgba(0,0,0,0.18)',
+  fontFamily: 'Inter, Roboto, Arial, sans-serif',
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '0.9rem',
   }
-`;
+}));
 
-const CurrentBetInfo = styled.div``;
+const CurrentBetInfo = styled(Typography)(({ theme }) => ({
+  color: '#fff',
+}));
 
-const BettingRoundInfo = styled.div`
-  text-transform: capitalize;
-`;
+const BettingRoundInfo = styled(Typography)(({ theme }) => ({
+  textTransform: 'capitalize',
+  color: '#fff',
+}));
 
-const MinRaiseInfo = styled.div``;
+const MinRaiseInfo = styled(Typography)(({ theme }) => ({
+  color: '#fff',
+}));
 
 // Parse board cards robustly
 function parseCard(card) {
@@ -450,91 +455,95 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
 };
 
 // Add new styled components
-const PositionIndicators = styled.div`
-  position: absolute;
-  display: flex;
-  gap: 4px;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-`;
+const PositionIndicators = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  display: 'flex',
+  gap: '4px',
+  top: '-20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+}));
 
-const DealerButton = styled.div`
-  background-color: #fff;
-  color: #000;
-  border: 2px solid #000;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 12px;
-`;
+const DealerButton = styled(Box)(({ theme }) => ({
+  backgroundColor: '#fff',
+  color: '#000',
+  border: '2px solid #000',
+  borderRadius: '50%',
+  width: '24px',
+  height: '24px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 'bold',
+  fontSize: '12px',
+}));
 
-const BlindIndicator = styled.div`
-  background-color: #ffd700;
-  color: #000;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-`;
+const BlindIndicator = styled(Box)(({ theme }) => ({
+  backgroundColor: '#ffd700',
+  color: '#000',
+  padding: '2px 6px',
+  borderRadius: '4px',
+  fontSize: '12px',
+  fontWeight: 'bold',
+}));
 
-const PlayerContainer = styled.div`
-  position: absolute;
-  left: ${({ position }) => position.left};
-  top: ${({ position }) => position.top};
-  width: ${({ position }) => position.width || 'auto'};
-  height: ${({ position }) => position.height || 'auto'};
-  padding: 8px;
-  background: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isActive ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)'};
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '#e76f51' : isActive ? '#e9c46a' : '#fff'};
-  font-family: Inter, Roboto, Arial, sans-serif;
-  font-weight: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? 700 : isActive ? 500 : 500};
-  font-size: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '1.1rem' : isActive ? '0.9rem' : '0.9rem'};
-  box-shadow: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '0 0 24px 6px #e76f51' : isActive ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)'};
-  border: ${({ isCurrentPlayer, isActive }) => isCurrentPlayer ? '3px solid #e76f51' : isActive ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f'};
-  transition: background 0.2s;
-  box-sizing: border-box;
-  word-break: break-word;
-`;
+const PlayerContainer = styled(Box)(({ theme, isCurrentPlayer, isActive }) => ({
+  position: 'absolute',
+  left: ({ position }) => position?.left,
+  top: ({ position }) => position?.top,
+  width: ({ position }) => position?.width || 'auto',
+  height: ({ position }) => position?.height || 'auto',
+  padding: '8px',
+  background: isCurrentPlayer ? 'rgba(231,111,81,0.18)' : isActive ? 'rgba(233,196,106,0.18)' : 'rgba(30,41,59,0.85)',
+  borderRadius: '12px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: isCurrentPlayer ? '#e76f51' : isActive ? '#e9c46a' : '#fff',
+  fontFamily: 'Inter, Roboto, Arial, sans-serif',
+  fontWeight: isCurrentPlayer ? 700 : isActive ? 500 : 500,
+  fontSize: isCurrentPlayer ? '1.1rem' : isActive ? '0.9rem' : '0.9rem',
+  boxShadow: isCurrentPlayer ? '0 0 24px 6px #e76f51' : isActive ? '0 4px 16px rgba(233,196,106,0.12)' : '0 2px 8px rgba(0,0,0,0.10)',
+  border: isCurrentPlayer ? '3px solid #e76f51' : isActive ? '2.5px solid #e9c46a' : '1.5px solid #2a9d8f',
+  transition: 'background 0.2s',
+  boxSizing: 'border-box',
+  wordBreak: 'break-word',
+}));
 
-const PlayerInfo = styled.div`
-  margin-bottom: 8px;
-`;
+const PlayerInfo = styled(Box)(({ theme }) => ({
+  marginBottom: '8px',
+}));
 
-const PlayerName = styled.div`
-  font-weight: bold;
-`;
+const PlayerName = styled(Typography)(({ theme }) => ({
+  fontWeight: 'bold',
+  color: '#fff',
+}));
 
-const ChipsInfo = styled.div`
-  font-size: 0.9rem;
-`;
+const ChipsInfo = styled(Typography)(({ theme }) => ({
+  fontSize: '0.9rem',
+  color: '#e9c46a',
+}));
 
-const BetInfo = styled.div`
-  font-size: 0.9rem;
-`;
+const BetInfo = styled(Typography)(({ theme }) => ({
+  fontSize: '0.9rem',
+  color: '#e76f51',
+}));
 
-const FoldIndicator = styled.div`
-  font-size: 0.9rem;
-`;
+const FoldIndicator = styled(Typography)(({ theme }) => ({
+  fontSize: '0.9rem',
+  color: '#e76f51',
+}));
 
-const PlayersContainer = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
+const PlayersContainer = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
 
 const WinnerMessage = styled.div`
   position: absolute;
