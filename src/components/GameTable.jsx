@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Paper, Typography, Button, useTheme, useMediaQuery, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Card from './Card';
 import PlayerHand from './PlayerHand';
@@ -301,6 +301,9 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
     localStorage.setItem('playerId', newPlayerId);
     return newPlayerId;
   });
+  const [showRaiseInput, setShowRaiseInput] = useState(false);
+  const [raiseAmount, setRaiseAmount] = useState('');
+  const [raiseError, setRaiseError] = useState('');
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -485,6 +488,37 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
 
   // Determine if it's the local player's turn
   const isLocalPlayersTurn = orderedPlayers[0] && orderedPlayers[0].id === gameState.currentPlayer;
+  const localPlayer = orderedPlayers[0];
+  const minRaise = gameState.minRaise || 1;
+  const maxRaise = localPlayer ? localPlayer.chips : 0;
+
+  const handleRaiseClick = () => {
+    setShowRaiseInput(true);
+    setRaiseAmount(minRaise);
+    setRaiseError('');
+  };
+
+  const handleRaiseConfirm = () => {
+    const amount = parseInt(raiseAmount, 10);
+    if (isNaN(amount) || amount < minRaise) {
+      setRaiseError(`Minimum raise is ${minRaise}`);
+      return;
+    }
+    if (amount > maxRaise) {
+      setRaiseError('Not enough chips');
+      return;
+    }
+    setRaiseError('');
+    setShowRaiseInput(false);
+    setRaiseAmount('');
+    handlePlayerAction('raise', amount);
+  };
+
+  const handleRaiseCancel = () => {
+    setShowRaiseInput(false);
+    setRaiseAmount('');
+    setRaiseError('');
+  };
 
   return (
     <Box sx={{
@@ -559,13 +593,35 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
             </Box>
           )}
           {/* Action buttons: only show for local player and only if it's their turn */}
-          {isLocalPlayersTurn && (
+          {isLocalPlayersTurn && !showRaiseInput && (
             <ActionButtonsBar>
               <ActionButtonStyled onClick={() => handlePlayerAction('call')}>CALL</ActionButtonStyled>
-              <ActionButtonStyled onClick={() => handlePlayerAction('raise')}>RAISE</ActionButtonStyled>
+              <ActionButtonStyled onClick={handleRaiseClick}>RAISE</ActionButtonStyled>
               <ActionButtonStyled onClick={() => handlePlayerAction('fold')}>FOLD</ActionButtonStyled>
             </ActionButtonsBar>
           )}
+          {/* Raise input dialog */}
+          <Dialog open={showRaiseInput} onClose={handleRaiseCancel} maxWidth="xs" fullWidth>
+            <DialogTitle>Enter Raise Amount</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label={`Min: ${minRaise}, Max: ${maxRaise}`}
+                type="number"
+                fullWidth
+                value={raiseAmount}
+                onChange={e => setRaiseAmount(e.target.value)}
+                inputProps={{ min: minRaise, max: maxRaise }}
+                sx={{ mt: 1 }}
+              />
+              {raiseError && <Typography color="error" sx={{ mt: 1 }}>{raiseError}</Typography>}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleRaiseCancel} color="error">Cancel</Button>
+              <Button onClick={handleRaiseConfirm} color="success" variant="contained">Confirm</Button>
+            </DialogActions>
+          </Dialog>
         </TableContainer>
       </Box>
     </Box>
