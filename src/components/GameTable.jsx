@@ -90,19 +90,38 @@ const ActionBar = styled(Box)(({ theme }) => ({
   }
 }));
 
-const PotInfo = styled(Typography)(({ theme }) => ({
-  color: '#fff',
-  fontSize: '1.1rem',
-  fontWeight: 600,
-  letterSpacing: '0.02em',
-  marginBottom: '12px',
-  textShadow: '0 1px 4px rgba(0,0,0,0.18)',
-  fontFamily: 'Inter, Roboto, Arial, sans-serif',
-  [theme.breakpoints.down('sm')]: {
-    fontSize: '0.9rem',
-    marginBottom: '8px',
+const GameInfo = styled.div`
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: white;
+`;
+
+const PotInfo = styled.div`
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  font-family: Inter, Roboto, Arial, sans-serif;
+  @media (max-width: 600px) {
+    font-size: 0.9rem;
   }
-}));
+`;
+
+const CurrentBetInfo = styled.div``;
+
+const BettingRoundInfo = styled.div`
+  text-transform: capitalize;
+`;
+
+const MinRaiseInfo = styled.div``;
 
 // Parse board cards robustly
 function parseCard(card) {
@@ -462,31 +481,6 @@ const BlindIndicator = styled.div`
   font-size: 12px;
   font-weight: bold;
 `;
-
-const GameInfo = styled.div`
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 16px;
-  background-color: rgba(0, 0, 0, 0.7);
-  padding: 8px 16px;
-  border-radius: 8px;
-  color: white;
-`;
-
-const PotInfo = styled.div`
-  font-weight: bold;
-`;
-
-const CurrentBetInfo = styled.div``;
-
-const BettingRoundInfo = styled.div`
-  text-transform: capitalize;
-`;
-
-const MinRaiseInfo = styled.div``;
 
 const PlayerContainer = styled.div`
   position: absolute;
