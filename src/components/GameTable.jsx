@@ -6,6 +6,7 @@ import PlayerHand from './PlayerHand';
 import io from 'socket.io-client';
 import { SOCKET_URL } from '../config';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import PersonIcon from '@mui/icons-material/Person';
 
 const TableContainer = styled(Paper)(({ theme }) => ({
   width: 'min(95vw, 900px)',
@@ -160,6 +161,123 @@ function parseCard(card) {
   }
   return { value: '?', suit: undefined };
 }
+
+// Add a helper for player avatar (initials or icon)
+function getAvatar(player) {
+  if (player.avatarUrl) {
+    return <img src={player.avatarUrl} alt="avatar" style={{ width: 48, height: 48, borderRadius: '50%' }} />;
+  }
+  const initials = (player.username || player.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
+  if (initials) {
+    return (
+      <Box sx={{
+        width: 48, height: 48, borderRadius: '50%', background: '#264653', color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 22, border: '2px solid #fff'
+      }}>{initials}</Box>
+    );
+  }
+  return <PersonIcon sx={{ width: 48, height: 48, color: '#fff', background: '#264653', borderRadius: '50%', border: '2px solid #fff' }} />;
+}
+
+// Add a helper for chip stack
+function ChipStack({ amount }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <Box sx={{
+        width: 18, height: 18, borderRadius: '50%', background: '#2a9d8f', border: '2px solid #fff',
+        boxShadow: '0 1px 2px #0008', display: 'inline-block', marginRight: '2px'
+      }} />
+      <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 16, textShadow: '0 1px 2px #0008' }}>${amount}</Typography>
+    </Box>
+  );
+}
+
+// Table branding
+const TableName = styled(Typography)(({ theme }) => ({
+  position: 'absolute',
+  top: 24,
+  left: '50%',
+  transform: 'translateX(-50%)',
+  color: '#ffd700',
+  fontWeight: 900,
+  fontSize: '2.2rem',
+  letterSpacing: '0.08em',
+  textShadow: '0 2px 8px #000a',
+  zIndex: 20,
+}));
+
+// Pot display
+const PotChips = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  left: '50%',
+  top: '50%',
+  transform: 'translate(-50%, -50%)',
+  zIndex: 10,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const PotChipIcon = styled(Box)(({ theme }) => ({
+  width: 28,
+  height: 28,
+  borderRadius: '50%',
+  background: '#2a9d8f',
+  border: '2px solid #fff',
+  boxShadow: '0 2px 8px #0008',
+  marginBottom: 2,
+}));
+
+const PotAmount = styled(Typography)(({ theme }) => ({
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: '1.1rem',
+  textShadow: '0 1px 2px #0008',
+}));
+
+// Player spot for circular layout
+const CircularPlayerSpot = styled(Box)(({ theme, isActive, isCurrentPlayer, isEmpty }) => ({
+  position: 'absolute',
+  width: 120,
+  height: 120,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: isEmpty ? 0.4 : 1,
+  filter: isEmpty ? 'grayscale(1)' : 'none',
+  zIndex: isCurrentPlayer ? 12 : isActive ? 11 : 10,
+  transition: 'opacity 0.2s, filter 0.2s',
+}));
+
+// Action buttons at the bottom
+const ActionButtonsBar = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  left: '50%',
+  bottom: 24,
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  gap: 24,
+  zIndex: 30,
+}));
+
+const ActionButtonStyled = styled(Button)(({ theme }) => ({
+  minWidth: 120,
+  fontSize: '1.2rem',
+  fontWeight: 700,
+  borderRadius: 24,
+  padding: '10px 32px',
+  background: '#222',
+  color: '#ffd700',
+  border: '2px solid #ffd700',
+  boxShadow: '0 2px 8px #000a',
+  '&:hover': {
+    background: '#ffd700',
+    color: '#222',
+    borderColor: '#222',
+  },
+}));
 
 const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChange }) => {
   const [socket, setSocket] = useState(null);
@@ -350,118 +468,93 @@ const GameTable = ({ gameId, isHost, onBettingRoundChange, onGameInProgressChang
   const isShowdown = displayState.bettingRound === 'showdown';
   const winnerId = displayState.winner && (displayState.winner.id || displayState.winner._id);
 
-  const renderPlayer = (player, position) => {
-    if (!player) return null;
-    
-    const isCurrentPlayer = player.id === playerId;
-    const isActive = player.id === gameState.currentPlayer;
-    const isDealer = player.isDealer;
-    const isSmallBlind = player.isSmallBlind;
-    const isBigBlind = player.isBigBlind;
+  // Circular seat positions (8 seats)
+  const seatAngles = [270, 315, 0, 45, 90, 135, 180, 225];
+  const seatRadius = isMobile ? 120 : 210;
+  const tableCenterX = 450;
+  const tableCenterY = 270;
 
-    return (
-      <PlayerContainer
-        key={player.id}
-        position={position}
-        isCurrentPlayer={isCurrentPlayer}
-        isActive={isActive}
-      >
-        <PlayerInfo>
-          <PlayerName>{player.username || player.name || 'Player'}</PlayerName>
-          <ChipsInfo>Chips: {player.chips || 0}</ChipsInfo>
-          {player.currentBet > 0 && (
-            <BetInfo>Bet: {player.currentBet}</BetInfo>
-          )}
-          {player.folded && <FoldIndicator>Folded</FoldIndicator>}
-        </PlayerInfo>
-        
-        <PlayerHand
-          cards={player.hand || []}
-          isCurrentPlayer={isCurrentPlayer}
-          isActive={isActive}
-          chips={player.chips || 0}
-          currentBet={player.currentBet || 0}
-          onAction={handlePlayerAction}
-          isLocalPlayer={isCurrentPlayer}
-          bettingRound={gameState.bettingRound}
-          folded={player.folded}
-          isMobile={isMobile}
-          minRaise={gameState.minRaise}
-        />
-
-        <PositionIndicators>
-          {isDealer && <DealerButton>D</DealerButton>}
-          {isSmallBlind && <BlindIndicator>SB</BlindIndicator>}
-          {isBigBlind && <BlindIndicator>BB</BlindIndicator>}
-        </PositionIndicators>
-      </PlayerContainer>
-    );
-  };
+  // Fill up to 6 seats for demo (can adjust for more)
+  const seats = Array(6).fill(null);
+  orderedPlayers.forEach((player, idx) => {
+    seats[idx] = player;
+  });
 
   return (
-    <Box sx={{ 
-      width: '100vw', 
-      minHeight: 'calc(100vh - 120px)', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
+    <Box sx={{
+      width: '100vw',
+      minHeight: 'calc(100vh - 120px)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
       background: '#181a1b',
       padding: isMobile ? '2vw' : '20px',
       overflow: 'auto',
       boxSizing: 'border-box',
-      '@media (orientation: landscape) and (max-width: 900px)': {
-        minHeight: '100vh',
-        padding: '1vw',
-      }
+      position: 'relative',
     }}>
-      <TableContainer>
-        {/* Winner message */}
-        {winnerMessage && (
-          <Box sx={{ 
-            position: 'absolute', 
-            left: '50%', 
-            top: '50%', 
-            transform: 'translate(-50%, -50%)', 
-            zIndex: 10, 
-            background: '#fff', 
-            color: '#222', 
-            px: isMobile ? 2 : 4, 
-            py: isMobile ? 1 : 2, 
-            borderRadius: 2, 
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)', 
-            fontWeight: 700, 
-            fontSize: isMobile ? '1.2rem' : '2rem', 
-            maxWidth: '90vw', 
-            textAlign: 'center', 
-            wordBreak: 'break-word' 
-          }}>
-            {winnerMessage}
-          </Box>
-        )}
-        <GameInfo>
-          <PotInfo>Pot: {displayState.pot}</PotInfo>
-          {displayState.currentBet > 0 && (
-            <CurrentBetInfo>Current Bet: {displayState.currentBet}</CurrentBetInfo>
-          )}
-          <BettingRoundInfo>Round: {displayState.bettingRound}</BettingRoundInfo>
-          {displayState.minRaise > 0 && (
-            <MinRaiseInfo>Min Raise: {displayState.minRaise}</MinRaiseInfo>
-          )}
-        </GameInfo>
-        <CommunityCards sx={isShowdown ? { opacity: 0.5, filter: 'grayscale(0.7)' } : {}}>
-          {board.map((card, index) => {
-            const parsed = parseCard(card);
-            return <Card key={index} value={parsed.value} suit={parsed.suit} size={isMobile ? 'small' : 'medium'} />;
+      <Box sx={{ position: 'relative', width: 900, height: 540, maxWidth: '98vw', maxHeight: '70vw', margin: '0 auto' }}>
+        <TableContainer>
+          <TableName>MONEYXRP</TableName>
+          {/* Player spots */}
+          {seats.map((player, idx) => {
+            const angle = seatAngles[idx % seatAngles.length];
+            const rad = (angle * Math.PI) / 180;
+            const x = tableCenterX + seatRadius * Math.cos(rad) - 60;
+            const y = tableCenterY + seatRadius * Math.sin(rad) - 60;
+            const isEmpty = !player;
+            const isCurrentPlayer = player && player.id === playerId;
+            const isActive = player && player.id === gameState.currentPlayer;
+            return (
+              <CircularPlayerSpot
+                key={idx}
+                sx={{ left: x, top: y }}
+                isEmpty={isEmpty}
+                isCurrentPlayer={isCurrentPlayer}
+                isActive={isActive}
+              >
+                {player ? (
+                  <>
+                    {getAvatar(player)}
+                    <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 18, mt: 1 }}>{player.username || player.name || 'Player'}</Typography>
+                    <ChipStack amount={player.chips || 0} />
+                  </>
+                ) : (
+                  <PersonIcon sx={{ width: 48, height: 48, color: '#fff', opacity: 0.4 }} />
+                )}
+              </CircularPlayerSpot>
+            );
           })}
-        </CommunityCards>
-        <PlayersContainer>
-          {orderedPlayers.map((player, index) => {
-            const position = playerPositions[index % playerPositions.length];
-            return renderPlayer(player, position);
-          })}
-        </PlayersContainer>
-      </TableContainer>
+          {/* Community cards */}
+          <CommunityCards sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 20 }}>
+            {board.map((card, index) => {
+              const parsed = parseCard(card);
+              return <Card key={index} value={parsed.value} suit={parsed.suit} size={isMobile ? 'small' : 'medium'} />;
+            })}
+          </CommunityCards>
+          {/* Pot display */}
+          <PotChips>
+            <PotChipIcon />
+            <PotAmount>${gameState.pot}</PotAmount>
+          </PotChips>
+          {/* Player hand (local player) */}
+          {orderedPlayers[0] && (
+            <Box sx={{ position: 'absolute', left: '50%', bottom: 32, transform: 'translateX(-50%)', zIndex: 25 }}>
+              <CardsContainer>
+                {(orderedPlayers[0].hand || []).map((card, idx) => (
+                  <Card key={idx} value={card?.value} suit={card?.suit} size={isMobile ? 'medium' : 'large'} />
+                ))}
+              </CardsContainer>
+            </Box>
+          )}
+          {/* Action buttons */}
+          <ActionButtonsBar>
+            <ActionButtonStyled onClick={() => handlePlayerAction('call')}>CALL</ActionButtonStyled>
+            <ActionButtonStyled onClick={() => handlePlayerAction('raise')}>RAISE</ActionButtonStyled>
+          </ActionButtonsBar>
+        </TableContainer>
+      </Box>
     </Box>
   );
 };
@@ -576,6 +669,19 @@ const WinnerMessage = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(1, 2),
     fontSize: '1.2rem',
+  }
+}));
+
+const CardsContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: '8px',
+  margin: '0 auto 24px auto',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: '8px 0',
+  [theme.breakpoints.down('sm')]: {
+    gap: '8px',
+    margin: '0 auto 16px auto',
   }
 }));
 
