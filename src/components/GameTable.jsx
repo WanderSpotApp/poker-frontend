@@ -545,23 +545,26 @@ const PlayersContainer = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
 }));
 
-const WinnerMessage = styled.div`
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  background: #fff;
-  color: #222;
-  px: 4;
-  py: 2;
-  border-radius: 2;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-  font-weight: 700;
-  font-size: 2rem;
-  max-width: 90vw;
-  text-align: center;
-  word-break: break-word;
-`;
+const WinnerMessage = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  left: '50%',
+  top: '50%',
+  transform: 'translate(-50%, -50%)',
+  zIndex: 10,
+  background: '#fff',
+  color: '#222',
+  padding: theme.spacing(2, 4),
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+  fontWeight: 700,
+  fontSize: '2rem',
+  maxWidth: '90vw',
+  textAlign: 'center',
+  wordBreak: 'break-word',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1, 2),
+    fontSize: '1.2rem',
+  }
+}));
 
 export default GameTable; 
